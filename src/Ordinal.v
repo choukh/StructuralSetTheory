@@ -62,12 +62,25 @@ Notation "A ⪯ B" := (嵌入 A B) (at level 70).
 
 Global Instance 嵌入_预序 : PreOrder 嵌入.
 Proof. split.
-  - intros A. exists (λ x, x). firstorder.
-  - intros A B C [f Hf] [g Hg]. exists (λ x, g (f x)).
+  - intros A. exists (λ xₛ, xₛ). firstorder.
+  - intros A B C [f Hf] [g Hg]. exists (λ xₛ, g (f xₛ)).
     intros p q. rewrite (Hf p q). apply Hg.
 Qed.
 
-Fact 嵌入_保良序 A B : A ⪯ B → 良序 B → 良序 A.
+Fact 嵌入_单射 A B f : @嵌入性 A B f → 单射性 f.
+Proof.
+  intros Hf aₛ bₛ H. apply π_单射.
+  apply 外延; apply Hf; congruence.
+Qed.
+
+Fact 子集_嵌入 A B : A ⊆ B → A ⪯ B.
+Proof.
+  intros H. unshelve eexists.
+  - intros [a aA]. exists a. now apply H.
+  - intros [a aA] [b bA]. now simpl.
+Qed.
+
+Fact 嵌入_反推良序 A B : A ⪯ B → 良序 B → 良序 A.
 Proof.
   intros [f Hf] wo C CA [a aC].
   destruct (@wo {b ∊ B | bB in ∃ xₛ, (π₁ xₛ) ∈ C ∧ f xₛ = σ B b bB})
@@ -80,19 +93,6 @@ Proof.
     set (cₛ := σ A c (CA c cC)).
     apply (Hf xₛ cₛ). rewrite fxₛ. simpl. apply H.
     exists (π₂ (f cₛ)), cₛ. split; trivial. now rewrite σπ_η.
-Qed.
-
-Fact 嵌入_单射 A B f : @嵌入性 A B f → 单射性 f.
-Proof.
-  intros Hf pₛ qₛ H. apply π_单射.
-  apply 外延; apply Hf; congruence.
-Qed.
-
-Fact 子集_嵌入 A B : A ⊆ B → A ⪯ B.
-Proof.
-  intros H. unshelve eexists.
-  - intros [a aA]. exists a. now apply H.
-  - intros [a aA] [b bA]. now simpl.
 Qed.
 
 Definition 同构 A B := A ⪯ B ∧ B ⪯ A.
@@ -124,7 +124,7 @@ Proof. split.
 Qed.
 
 Instance 同构改写良序 : Proper (同构 ==> iff) 良序.
-Proof. intros A B [AB BA]. split; now apply 嵌入_保良序. Qed.
+Proof. intros A B [AB BA]. split; now apply 嵌入_反推良序. Qed.
 
 Instance 同构改写嵌入 : Proper (同构 ==> 同构 ==> iff) 嵌入.
 Proof.
@@ -145,6 +145,16 @@ Proof.
   - apply HB. rewrite <- HC. now apply HB.
 Qed.
 
+Fact 序数_良序集 α A : α ∈ Ω → A ∈ α → 良序 A.
+Proof.
+  intros (B & Bα & wo & H) Aα.
+  enough (A ~ B) as ->. trivial.
+  symmetry. now apply H.
+Qed.
+
+Fact 良序集_序数 A : 良序 A → ord A ∈ Ω.
+Proof. exists A. firstorder reflexivity. Qed.
+
 Lemma 序数_同构 α A B : α ∈ Ω → A ∈ α → B ∈ α → A ~ B.
 Proof.
   intros (C & _ & _ & HC) Aα Bα. etransitivity.
@@ -158,18 +168,15 @@ Proof.
   apply HC, Aα. apply AB.
 Qed.
 
-Fact 序数_良序集 α A : α ∈ Ω → A ∈ α → 良序 A.
-Proof.
-  intros (B & Bα & wo & H) Aα.
-  enough (A ~ B) as ->. trivial.
-  symmetry. now apply H.
-Qed.
-
-Fact 良序集_序数 A : 良序 A → ord A ∈ Ω.
-Proof. exists A. firstorder reflexivity. Qed.
-
-Definition 序 α β := ∃ A B, A ∈ α ∧ B ∈ β ∧ A ~ B.
+Definition 序 α β := ∃ A B, A ∈ α ∧ B ∈ β ∧ A ⪯ B.
 Notation "α ≤ β" := (序 α β) (at level 70).
+
+Fact 序_嵌入 α β A B : α ∈ Ω → β ∈ Ω → α ≤ β → A ∈ α → B ∈ β → A ⪯ B.
+Proof.
+  intros αΩ βΩ (C & D & Cα & βD & CD) Aα Bβ.
+  rewrite (序数_同构 αΩ Aα Cα).
+  rewrite (序数_同构 βΩ Bβ βD). apply CD.
+Qed.
 
 Lemma 序_自反 α : α ∈ Ω → α ≤ α.
 Proof. intros (A & Aα & wo & H). exists A, A. firstorder reflexivity. Qed.
@@ -185,21 +192,14 @@ Qed.
 
 Lemma 序_反自反_引理 α β : α ∈ Ω → β ∈ Ω → α ≤ β → β ≤ α → α ⊆ β.
 Proof.
-  intros αΩ βΩ (A & B & Aα & Bβ & AB) (C & D & Cβ & Dγ & CD) E Eα.
-  apply 同构_序数 with B; trivial.
-  apply 序数_同构 with α; trivial.
-  apply 同构_序数 with A; trivial.
+  intros αΩ βΩ (A & B & Aα & Bβ & AB) (C & D & Cβ & Dα & CD) E Eα.
+  apply 同构_序数 with B; trivial. split.
+  - now rewrite (序数_同构 αΩ Eα Dα), (序数_同构 βΩ Bβ Cβ).
+  - now rewrite (序数_同构 αΩ Eα Aα).
 Qed.
 
 Lemma 序_反自反 α β : α ∈ Ω → β ∈ Ω → α ≤ β → β ≤ α → α = β.
 Proof. intros. apply 外延; now apply 序_反自反_引理. Qed.
-
-Lemma 序_嵌入 α β A B : α ∈ Ω → β ∈ Ω → α ≤ β → A ∈ α → B ∈ β -> A ⪯ B.
-Proof.
-  intros αΩ βΩ (C & D & Cα & βD & CD) Aα Bβ.
-  rewrite (序数_同构 αΩ Aα Cα).
-  rewrite (序数_同构 βΩ Bβ βD). apply CD.
-Qed.
 
 End Ordinal.
 
