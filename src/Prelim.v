@@ -4,16 +4,12 @@ Require Export Utf8_core Setoid Morphisms.
 Global Set Implicit Arguments.
 Global Unset Strict Implicit.
 
-(** 经典逻辑 **)
+(** 逻辑基础 **)
 
 (* 命题外延 *)
 Axiom PE : ∀ P Q, P ↔ Q → P = Q.
 (* 函数外延 *)
 Axiom FE : ∀ A B (f g : A → B), (∀ x, f x = g x) → f = g.
-(* 排中律 *)
-Axiom XM : ∀ P, P ∨ ¬ P.
-
-Tactic Notation "反证" := edestruct XM as []; eauto; exfalso.
 
 Lemma 谓词外延 A (p q : A → Prop) : (∀ x, p x ↔ q x) → p = q.
 Proof. intros H. apply FE. intros x. apply PE, H. Qed.
@@ -25,9 +21,13 @@ Proof.
   destruct H, H'. reflexivity. apply PE. easy.
 Qed.
 
+Class 经典 : Set := XM : ∀ P, P ∨ ¬ P.
+Tactic Notation "反证" := edestruct XM as []; eauto; exfalso.
+
 (** 成员关系 **)
 
 Notation "x ∈ p" := (p x) (only parsing, at level 70).
+Notation "x ∉ p" := (¬ p x) (only parsing, at level 70).
 
 Notation "∀ x .. y ∈ A , P" :=
   (∀ x, x ∈ A → (.. (∀ y, y ∈ A → P) ..))
@@ -39,8 +39,13 @@ Notation "∃ x .. y ∈ A , P" :=
 
 (** 子集关系 *)
 
-Notation "p ⊆ q" := (∀ x ∈ p, x ∈ q) (at level 70).
-Notation "p ⊂ q" := (p ⊆ q ∧ ¬ q ⊆ p) (at level 70).
+Notation "'𝒫' A" := (A → Prop) (at level 9).
+
+Definition 包含 A (p q : 𝒫 A) := ∀ x ∈ p, x ∈ q.
+Notation "p ⊆ q" := (包含 p q) (at level 70).
+Notation "p ⊈ q" := (¬ p ⊆ q) (at level 70).
+Notation "p ⊂ q" := (p ⊆ q ∧ q ⊈ p) (at level 70).
+Notation "p ⊄ q" := (¬ p ⊂ q) (at level 70).
 
 Notation "∀ x .. y ⊆ A , P" :=
   (∀ x, x ⊆ A → (.. (∀ y, y ⊆ A → P) ..))
@@ -49,8 +54,6 @@ Notation "∀ x .. y ⊆ A , P" :=
 Notation "∃ x .. y ⊆ A , P" :=
   (∃ x, x ⊆ A ∧ (.. (∃ y, y ⊆ A ∧ P) ..))
   (only parsing, at level 200, x binder, right associativity).
-
-Notation "'𝒫' A" := (A → Prop) (at level 9).
 
 Fact 包含_自反 A (p : 𝒫 A) : p ⊆ p.
 Proof. firstorder. Qed.
@@ -108,6 +111,42 @@ Proof. exists (@π₁ A p). intros x y. apply π_单射. Qed.
 Lemma 单射_到幂集 A : |A| ≤ |𝒫 A|.
 Proof. exists eq. now intros x y ->. Qed.
 
+(** 关系式单射 **)
+
+Definition 左完全 A B (R : A → B → Prop) :=
+  ∀ x, ∃ y, R x y.
+
+Definition 右完全 A B (R : A → B → Prop) :=
+  ∀ y, ∃ x, R x y.
+
+Definition 函数性 A B (R : A → B → Prop) :=
+  ∀ x y y', R x y → R x y' → y = y'.
+
+Definition 单射性ᵣ A B (R : A → B → Prop) :=
+  ∀ x x' y, R x y → R x' y → x = x'.
+
+Definition 单射ᵣ A B :=
+  ∃ (R : A → B → Prop), 左完全 R ∧ 函数性 R ∧ 单射性ᵣ R.
+  Notation "| A | ≤ᵣ | B |" := (单射ᵣ A B) (format "| A |  ≤ᵣ  | B |", at level 70).
+
+Lemma 单射_单射ᵣ A B : |A| ≤ |B| → |A| ≤ᵣ |B|.
+Proof.
+  intros [f Hf]. exists (λ x y, y = f x). repeat split.
+  - intros x. now exists (f x).
+  - intros x y y' -> ->. reflexivity.
+  - intros x x' y -> H. now apply Hf.
+Qed.
+
+Fact 幂陪域关系的函数化 A B (R : A → 𝒫 B → Prop) :
+  左完全 R → 函数性 R → Σ (λ f, ∀ x, R x (f x)).
+Proof.
+  intros tot fn. exists (λ x y, ∃ a, R x a ∧ y ∈ a).
+  intros x. destruct (tot x) as [y Rxy].
+  enough (y = (λ y, ∃ a : 𝒫 B, R x a ∧ a y)) as <- by apply Rxy.
+  apply 外延; intros a H. now exists y.
+  destruct H as [z [Rxz ax]]. now rewrite (fn x y z).
+Qed.
+
 (** 双射 **)
 
 Definition 互逆 A B (f : A → B) (g : B → A) := (∀ x, f (g x) = x) ∧ (∀ y, g (f y) = y).
@@ -151,3 +190,5 @@ Proof. intros H. apply 无穷_单射 with A. trivial. apply 单射_到幂迭代.
 
 (* 广义连续统假设 *)
 Definition GCH := ∀ A B, 无穷 A → |A| ≤ |B| → |B| ≤ |𝒫 A| → |B| ≤ |A| ∨ |𝒫 A| ≤ |B|.
+
+Tactic Notation "split3" := split; [|split].
