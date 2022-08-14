@@ -21,8 +21,11 @@ Proof.
   destruct H, H'. reflexivity. apply PE. easy.
 Qed.
 
-Class 经典 : Set := XM : ∀ P, P ∨ ¬ P.
-Tactic Notation "反证" := edestruct XM as []; eauto; exfalso.
+(* 排中律 *)
+Class LEM : Set := lem : ∀ P, P ∨ ¬ P.
+Tactic Notation "排中" constr(P) := destruct (lem P).
+Tactic Notation "排中" constr(P) "as" simple_intropattern(L) := destruct (lem P) as L.
+Tactic Notation "反证" := edestruct lem as []; eauto; exfalso.
 
 (** 成员关系 **)
 
@@ -68,10 +71,9 @@ Notation 外延 := 包含_反对称.
 
 (** 其他集论记号 **)
 
-Notation "A ≠ ∅" := (∃ x, x ∈ A) (only parsing, at level 70).
-Notation "A ⋃ B" := (λ x, x ∈ A ∨ x ∈ B) (at level 60).
-Notation "A ∩ B" := (λ x, x ∈ A ∧ x ∈ B) (at level 60).
-Notation "A ⁻" := (λ x, ¬ x ∈ A) (format "A ⁻", at level 20).
+Notation "A ⁻" := (λ x, ¬ x ∈ A) (only parsing, at level 20).
+Notation "A ⋃ B" := (λ x, x ∈ A ∨ x ∈ B) (only parsing, at level 60).
+Notation "A ∩ B" := (λ x, x ∈ A ∧ x ∈ B) (only parsing, at level 60).
 Notation "{ a , }" := (λ x, x = a) (only parsing).
 Notation "{ a , b }" := (λ x, x = a ∨ x = b) (only parsing).
 Notation "{ x ∊ A | P }" := (λ x, x ∈ A ∧ P) (only parsing).
@@ -84,7 +86,7 @@ Notation σ := exist.
 Notation π₁ := proj1_sig.
 Notation π₂ := proj2_sig.
 
-Fact σ_函数 A (p : 𝒫 A) x y px py : x = y → σ p x px = σ p y py.
+Lemma σ_函数 A (p : 𝒫 A) x y px py : x = y → σ p x px = σ p y py.
 Proof. intros ->. now rewrite (PI px py). Qed.
 
 Lemma π_单射 A (p : 𝒫 A) (xₛ yₛ : Σ p) : π₁ xₛ = π₁ yₛ → xₛ = yₛ.
@@ -191,4 +193,16 @@ Proof. intros H. apply 无穷_单射 with A. trivial. apply 单射_到幂迭代.
 (* 广义连续统假设 *)
 Definition GCH := ∀ A B, 无穷 A → |A| ≤ |B| → |B| ≤ |𝒫 A| → |B| ≤ |A| ∨ |𝒫 A| ≤ |B|.
 
+(** Other Notations **)
+
 Tactic Notation "split3" := split; [|split].
+
+Notation "'∃' ! x .. y , P" :=
+  (ex (unique (λ x, .. (ex (unique (λ y, P))) ..)))
+  (at level 200, x binder, right associativity,
+   format "'[' '∃' ! '/ '  x .. y ,  '/ ' P ']'").
+
+Notation "'∃' ! x .. y ∈ A , P" :=
+  (∃! x, x ∈ A ∧ (.. (∃! y, y ∈ A ∧ P) ..))
+  (at level 200, x binder, right associativity,
+   format "'[' '∃' ! '/ '  x .. y  ∈  A ,  '/ ' P ']'").
