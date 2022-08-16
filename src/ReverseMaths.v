@@ -33,11 +33,6 @@ Proof.
   - right. intros q. destruct (f ltac:(now exists e)) as [y [p _]]. auto.
 Qed.
 
-(* Lemma DGP_嵌入线序 : DGP → (∀ A B ∈ 良序, A ≼ B ∨ B ≼ A).
-Proof.
-  intros dgp A woA B woB.
-Admitted. *)
-
 Lemma 嵌入可判定_LEM : (∀ A B ∈ 良序, A ≼ B ∨ A ⋠ B) → LEM.
 Proof.
   intros dec P. set (e := λ _ : U, False).

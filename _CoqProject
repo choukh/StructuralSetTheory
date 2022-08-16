@@ -2,6 +2,5 @@
 
 src/Prelim.v
 src/Ordinal.v
-src/Cardinal.v
 
 src/ReverseMaths.v

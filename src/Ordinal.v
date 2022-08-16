@@ -143,7 +143,7 @@ Proof.
   split; etransitivity; etransitivity; eauto; reflexivity.
 Qed.
 
-Fact ord_函数 A B : A = B → ord A = ord B.
+Fact ord_函数 A B : A ≃ B → ord A = ord B.
 Proof. intros H. apply 外延; intros C <-; now rewrite H. Qed.
 
 (* 序数 *)
@@ -243,22 +243,22 @@ Section Relational.
 
 Variable A B : 𝒫 𝒫 U.
 Variable R : Σ A → Σ B → Prop.
-Hypothesis 全 : 左完全 R.
-Hypothesis 满 : 右完全 R.
-Hypothesis 嵌 : 嵌入性ᵣ R.
+Hypothesis R全 : 左完全 R.
+Hypothesis R满 : 右完全 R.
+Hypothesis R嵌 : 嵌入性ᵣ R.
 
 Lemma 嵌入性ᵣ_函数性 : 函数性 R.
 Proof.
   intros aₛ bₛ cₛ Rab Rac. apply π_单射, 外延.
-  - apply (嵌 Rab Rac). firstorder.
-  - apply (嵌 Rac Rab). firstorder.
+  - apply (R嵌 Rab Rac). firstorder.
+  - apply (R嵌 Rac Rab). firstorder.
 Qed.
 
 Lemma 嵌入性ᵣ_单射性ᵣ : 单射性ᵣ R.
 Proof.
   intros aₛ bₛ cₛ Rab Rac. apply π_单射, 外延.
-  - apply (嵌 Rab Rac). firstorder.
-  - apply (嵌 Rac Rab). firstorder.
+  - apply (R嵌 Rab Rac). firstorder.
+  - apply (R嵌 Rac Rab). firstorder.
 Qed.
 
 (** 序嵌入关系的函数化 **)
@@ -273,7 +273,7 @@ Proof.
 Qed.
 
 Local Lemma fπ₂ aₛ : fπ₁ aₛ ∈ B.
-Proof. destruct (全 aₛ) as [bₛ Rab]. rewrite (fπ₁_求值 Rab). apply π₂. Qed.
+Proof. destruct (R全 aₛ) as [bₛ Rab]. rewrite (fπ₁_求值 Rab). apply π₂. Qed.
 
 Local Definition f (aₛ : Σ A) := σ B (fπ₁ aₛ) (fπ₂ aₛ).
 
@@ -281,10 +281,10 @@ Local Lemma f_求值 aₛ bₛ : R aₛ bₛ → f aₛ = bₛ.
 Proof. intros H. now apply π_单射, fπ₁_求值. Qed.
 
 Local Lemma f_关系 aₛ : R aₛ (f aₛ).
-Proof. destruct (全 aₛ) as [bₛ Rab]. now rewrite (f_求值 Rab). Qed.
+Proof. destruct (R全 aₛ) as [bₛ Rab]. now rewrite (f_求值 Rab). Qed.
 
 Local Lemma f_嵌入性 : 嵌入性 f.
-Proof. intros a b. apply 嵌; apply f_关系. Qed.
+Proof. intros a b. apply R嵌; apply f_关系. Qed.
 
 Let gπ₁ (bₛ : Σ B) := λ x, ∀ a (aA : a ∈ A), R (σ A a aA) bₛ → x ∈ a.
 
@@ -296,7 +296,7 @@ Proof.
 Qed.
 
 Local Lemma gπ₂ bₛ : gπ₁ bₛ ∈ A.
-Proof. destruct (满 bₛ) as [a Rab]. rewrite (gπ₁_求值 Rab). apply π₂. Qed.
+Proof. destruct (R满 bₛ) as [a Rab]. rewrite (gπ₁_求值 Rab). apply π₂. Qed.
 
 Local Definition g (bₛ : Σ B) := σ A (gπ₁ bₛ) (gπ₂ bₛ).
 
@@ -304,13 +304,13 @@ Local Lemma g_求值 aₛ bₛ : R aₛ bₛ → g bₛ = aₛ.
 Proof. intros H. now apply π_单射, gπ₁_求值. Qed.
 
 Local Lemma g_关系 bₛ : R (g bₛ) bₛ.
-Proof. destruct (满 bₛ) as [aₛ Rab]. now rewrite (g_求值 Rab). Qed.
+Proof. destruct (R满 bₛ) as [aₛ Rab]. now rewrite (g_求值 Rab). Qed.
 
 Local Lemma fg互逆 : 互逆 f g.
 Proof. split.
-  - intros bₛ. destruct (满 bₛ) as [a Rab].
+  - intros bₛ. destruct (R满 bₛ) as [a Rab].
     rewrite (g_求值 Rab). now apply f_求值.
-  - intros aₛ. destruct (全 aₛ) as [b Rab].
+  - intros aₛ. destruct (R全 aₛ) as [b Rab].
     rewrite (f_求值 Rab). now apply g_求值.
 Qed.
 
@@ -374,7 +374,7 @@ Proof.
     exists (π₁ ffcₛ). repeat split.
     + apply (π₂ ffcₛ).
     + apply Hf. simpl. apply (π₂ fcₛ).
-    + intros H % Hf. simpl in H. now apply (π₂ fcₛ).
+    + intros H%Hf. simpl in H. now apply (π₂ fcₛ).
   - intros [c cA] [d dA]; simpl.
     rewrite (Hf (σ A c cA) (σ A d dA)).
     destruct (f (σ A c cA)) as [fc [fcA fcb]].
@@ -437,7 +437,7 @@ Let Ran b := ∃ a, a ~ b.
 
 Local Lemma 关联点保序 `{LEM} a b x y : a ~ x → b ~ y → a ⊆ b ↔ x ⊆ y.
 Proof.
-  intros (aA & xB & ax % 强同构_同构) (bA & yB & b_y % 强同构_同构). split; intros sub.
+  intros (aA & xB & ax%强同构_同构) (bA & yB & b_y%强同构_同构). split; intros sub.
   - eapply 前段嵌入前段_r. apply HB. 1-2:trivial.
     rewrite <- ax, <- b_y. now apply 前段嵌入前段_l.
   - eapply 前段嵌入前段_r. apply HA. 1-2:trivial.
@@ -576,6 +576,134 @@ Proof.
   - exists A. split; trivial. intros B Bα. 反证. firstorder.
 Qed.
 
+Lemma 序数良序 `{LEM} Θ : Θ ⊆ Ω → ex Θ → ∃ α ∈ Θ, ∀ β ∈ Θ, α ≤ β.
+Proof.
+  intros ΘΩ [α αΘ]. destruct (ΘΩ α αΘ) as (A & αA & woA & isoA).
+  destruct (@良序集族良序 H {X ∊ 良序 | ord X ∈ Θ}) as (M & [woM HM] & min).
+  - now intros B [HB _].
+  - intros B C BC [woB HB]. split.
+    now rewrite <- BC. now rewrite <- (ord_函数 BC).
+  - exists A. split; trivial. rewrite <- (@序数等于同构类 α); auto.
+  - exists (ord M). split; trivial. intros β βΘ.
+    destruct (ΘΩ β βΘ) as (B & αB & woB & isoB).
+    exists M, B. split3; trivial. reflexivity.
+    apply min. split; trivial. rewrite <- (@序数等于同构类 β); auto.
+Qed.
+
+(* 哈特格斯数 *)
+Definition ℍ := Σ Ω.
+Notation "U₊" := ℍ.
+
+Definition ℍ序 (αₛ βₛ : U₊) := (序 (π₁ αₛ) (π₁ βₛ)).
+Notation "αₛ ≤ₛ βₛ" := (ℍ序 αₛ βₛ) (at level 70).
+
+Lemma ℍ序_自反 (αₛ : U₊) : αₛ ≤ₛ αₛ.
+Proof. apply 序_自反, π₂. Qed.
+
+Lemma ℍ序_传递 (αₛ βₛ γₛ : U₊) : αₛ ≤ₛ βₛ → βₛ ≤ₛ γₛ → αₛ ≤ₛ γₛ.
+Proof. apply 序_传递, π₂. Qed.
+
+Global Instance ℍ序_预序 : PreOrder ℍ序.
+Proof. split. exact ℍ序_自反. exact ℍ序_传递. Qed.
+
+Lemma ℍ序_反自反 (αₛ βₛ : U₊) : αₛ ≤ₛ βₛ → βₛ ≤ₛ αₛ → αₛ = βₛ.
+Proof. intros H1 H2. apply π_单射. apply 序_反自反; trivial; apply π₂. Qed.
+
+Lemma ℍ序_良序 `{LEM} (Aₛ : 𝒫 U₊) : ex Aₛ → ∃ αₛ ∈ Aₛ, ∀ βₛ ∈ Aₛ, αₛ ≤ₛ βₛ.
+Proof.
+  intros [[α αΩ] αAₛ].
+  destruct (@序数良序 H {α ∊ Ω | αΩ in σ _ α αΩ ∈ Aₛ}) as (μ & [μΩ μAₛ] & min).
+  - now intros β [βΩ _].
+  - now exists α, αΩ.
+  - exists (σ _ μ μΩ). split; trivial. intros [βₛ βΩ] βAₛ.
+    apply min. now exists βΩ.
+Qed.
+
+Fact ℍ_势上界 : |U₊| ≤ |𝒫ₙ 3 U|.
+Proof. apply 单射_从子集. Qed.
+
+(* |U₊| ≰ |U| *)
+Section Inject.
+
+Local Definition 嵌入性ₛ A (f : ℍ → Σ A) :=
+  ∀ αₛ βₛ, αₛ ≤ₛ βₛ ↔ π₁ (f αₛ) ⊆ π₁ (f βₛ).
+Local Definition 被嵌 α := ∃ A ∈ α, ∃ f : ℍ → Σ A, 嵌入性ₛ f.
+
+Local Definition 前段之序数 A a : 良序 A → U₊.
+Proof. intros wo. exists (ord a⇠A). apply 良序集_序数, 前段良序, wo. Defined.
+
+Local Lemma 序数不被嵌入 `{LEM} α : α ∈ Ω → ¬ 被嵌 α.
+Proof.
+  intros αΩ (A & Aα & f & Hf).
+  assert (woA : 良序 A). apply 序数_良序集 with α; auto.
+  set (fαₛ := f (σ _ α αΩ)).
+  apply (@全段不嵌入前段 A (π₁ fαₛ)). trivial. apply π₂.
+  unshelve eexists.
+  - intros [a aA]. exists (π₁ (f (前段之序数 a woA))). split3.
+    + apply π₂.
+    + apply Hf. exists (a⇠A), A. split3.
+      simpl. reflexivity. trivial. apply 前段嵌入全段.
+    + intros le%Hf. apply (全段不嵌入前段 woA aA).
+      eapply 序_嵌入. 3: apply le. all:simpl; trivial. 2:reflexivity.
+      now apply 良序集_序数, 前段良序.
+  - intros [a aA] [b bA]; simpl.
+    rewrite 前段嵌入前段. 2: apply woA. 2-3:trivial. split.
+    + intros emb. apply Hf. exists (a⇠A), (b⇠A).
+      split3; simpl; trivial; reflexivity.
+    + intros sub. apply Hf in sub as (B & C & HB & HC & emb).
+      simpl in HB, HC. now rewrite HB, HC.
+Qed.
+
+Variable R : U₊ → U → Prop.
+Hypothesis R全 : 左完全 R.
+Hypothesis R单 : 单射性ᵣ R.
+
+Local Definition 前 (αₛ : U₊) : 𝒫 U := λ x, ∀ βₛ, R βₛ x → βₛ ≤ₛ αₛ.
+Local Definition A := λ a, ∃ αₛ : U₊, a = 前 αₛ.
+Local Definition α := ord A.
+
+Local Lemma A良序 `{LEM} : 良序 A.
+Proof.
+  intros B BA [a aB]. destruct (BA a aB) as [αₛ ->].
+  destruct (@ℍ序_良序 H (λ αₛ, 前 αₛ ∈ B)) as (μₛ & μB & min).
+  - now exists αₛ.
+  - exists (前 μₛ). split; trivial.
+    intros b bB. destruct (BA b bB) as [βₛ ->].
+    intros x Hx γₛ Rγx%Hx. etransitivity. 2:now apply min. trivial.
+Qed.
+
+Local Lemma α是序数 `{LEM} : α ∈ Ω.
+Proof. apply 良序集_序数, A良序. Qed.
+
+Local Definition F : ℍ → Σ A.
+Proof. intros αₛ. exists (前 αₛ). now exists αₛ. Defined.
+
+Local Lemma F_嵌入性ₛ : 嵌入性ₛ F.
+Proof.
+  intros αₛ βₛ; simpl. split.
+  - intros αβ x Hx γₛ γα%Hx. etransitivity. apply γα. trivial.
+  - intros αβ. destruct (R全 αₛ) as [γ Rαγ].
+    assert (Hγ : γ ∈ 前 αₛ). intros δₛ Rδγ. rewrite (R单 Rαγ Rδγ). reflexivity.
+    apply αβ in Hγ. now apply Hγ.
+Qed.
+
+Local Lemma α被嵌 : 被嵌 α.
+Proof.
+  exists A. split. split; reflexivity.
+  exists F. apply F_嵌入性ₛ.
+Qed.
+
+Local Lemma 矛盾 `{LEM} : False.
+Proof. apply 序数不被嵌入 with α. apply α是序数. apply α被嵌. Qed.
+
+End Inject.
+
+Lemma 后继基数ᵣ `{LEM} : ¬ |U₊| ≤ᵣ |U|.
+Proof. intros (R & tot & _ & inj). apply 矛盾 with R; trivial. Qed.
+
+Lemma 后继基数 `{LEM} : ¬ |U₊| ≤ |U|.
+Proof. intros le. apply 后继基数ᵣ, 单射_单射ᵣ, le. Qed.
+
 End Ordinal.
 
 Notation "A ≼ B" := (嵌入 A B) (at level 70).
@@ -589,3 +717,6 @@ Notation "A ≅ B" := (强同构 A B) (at level 70).
 Notation "a ⇠ A" := (前段 A a) (format "a ⇠ A", at level 9, right associativity).
 Notation "A ≺ B" := (严格嵌入 A B) (at level 70).
 Notation "A ⋨ B" := (强严格嵌入 A B) (at level 70).
+
+Notation "U ₊" := (ℍ U) (format "U ₊", at level 8).
+Notation "α ≤ β" := (ℍ序 α β) (at level 70).
